@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>7DTD Haptics — Config Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          ink:    '#020617',  // background
+          panel:  '#0F172A',  // primary surface
+          panel2: '#1E293B',  // secondary surface
+          line:   '#1f2c43',  // borders
+          fg:     '#F8FAFC',  // text
+          muted:  '#94A3B8',  // muted text
+          accent: '#22C55E',  // CTA / positive
+          danger: '#F43F5E',
+          warn:   '#F59E0B',
+        },
+        fontFamily: {
+          sans: ['"Fira Sans"', 'system-ui', 'sans-serif'],
+          mono: ['"Fira Code"', 'ui-monospace', 'monospace'],
+        },
+      },
+    },
+  };
+</script>
+<style>
+  :root { color-scheme: dark; }
+  body { background: #020617; }
+  /* Range slider — themed, accessible */
+  input[type="range"] { -webkit-appearance: none; appearance: none; height: 6px; border-radius: 9999px; background: #1E293B; outline: none; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 9999px; background: #22C55E; cursor: pointer; border: 2px solid #052e16; box-shadow: 0 0 8px rgba(34,197,94,.45); transition: transform .15s ease; }
+  input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.12); }
+  input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 9999px; background: #22C55E; cursor: pointer; border: 2px solid #052e16; }
+  input[type="range"]:focus-visible::-webkit-slider-thumb { outline: 2px solid #22C55E; outline-offset: 2px; }
+  /* Toggle */
+  .switch { position: relative; width: 44px; height: 24px; flex: none; }
+  .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .switch .track { position: absolute; inset: 0; background: #334155; border-radius: 9999px; transition: background .2s ease; }
+  .switch .knob { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; background: #F8FAFC; border-radius: 9999px; transition: transform .2s ease; }
+  .switch input:checked + .track { background: #22C55E; }
+  .switch input:checked + .track + .knob { transform: translateX(20px); }
+  .switch input:focus-visible + .track { outline: 2px solid #22C55E; outline-offset: 2px; }
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: #0F172A; }
+  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+  ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  details > summary { list-style: none; cursor: pointer; }
+  details > summary::-webkit-details-marker { display: none; }
+  details[open] .chev { transform: rotate(90deg); }
+  .chev { transition: transform .2s ease; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+  select, input[type="text"], input[type="number"] { background: #0F172A; }
+  .toast-in { animation: toastIn .25s ease; }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body class="font-sans text-fg min-h-screen antialiased selection:bg-accent/30">
+
+  <!-- ── Sticky header ─────────────────────────────────────────────── -->
+  <header class="sticky top-0 z-30 backdrop-blur bg-ink/85 border-b border-line">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center gap-4 flex-wrap">
+      <div class="flex items-center gap-3 mr-auto">
+        <span class="grid place-items-center w-9 h-9 rounded-lg bg-accent/15 text-accent ring-1 ring-accent/30">
+          <!-- zap -->
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </span>
+        <div class="leading-tight">
+          <h1 class="font-mono font-semibold text-sm sm:text-base tracking-tight">7DTD&nbsp;Haptics <span class="text-muted font-normal">/ Config Editor</span></h1>
+          <p class="text-[11px] text-muted">Generates <code class="text-accent">com.rustyblu.7dtd_haptics.cfg</code></p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 text-xs">
+        <span id="pill-count" class="font-mono px-2.5 py-1 rounded-md bg-panel2 ring-1 ring-line text-muted"></span>
+        <span id="pill-xtoys" class="font-mono px-2.5 py-1 rounded-md bg-panel2 ring-1 ring-line text-muted">XToys off</span>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="btn-import" class="cursor-pointer inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg bg-panel2 hover:bg-line ring-1 ring-line transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent" aria-label="Import an existing config file">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Import
+        </button>
+        <button id="btn-export" class="cursor-pointer inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg bg-accent text-ink hover:bg-emerald-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-ink">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export .cfg
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- ── Output / connection panel ───────────────────────────────── -->
+    <section class="rounded-xl bg-panel ring-1 ring-line overflow-hidden">
+      <div class="px-5 py-4 border-b border-line flex items-center gap-2">
+        <svg class="w-4 h-4 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+        <h2 class="font-mono text-sm font-semibold">Outputs</h2>
+      </div>
+      <div class="grid md:grid-cols-2 gap-px bg-line">
+        <!-- Intiface (informational) -->
+        <div class="bg-panel p-5">
+          <div class="flex items-center justify-between gap-3">
+            <h3 class="font-medium text-sm">Intiface / Buttplug</h3>
+            <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-panel2 text-muted ring-1 ring-line">local</span>
+          </div>
+          <p class="mt-2 text-xs text-muted leading-relaxed">Primary output. Runs through Intiface Central on <code class="text-fg">ws://localhost:12345</code>. No setup here — start Intiface, connect your device, then launch the game. Per-event device &amp; actuator routing is in each event's <span class="text-fg">Advanced</span> panel.</p>
+        </div>
+        <!-- XToys -->
+        <div class="bg-panel p-5 space-y-4">
+          <div class="flex items-center justify-between gap-3">
+            <label for="xtoys-enabled" class="font-medium text-sm cursor-pointer">XToys webhook</label>
+            <span class="switch"><input id="xtoys-enabled" type="checkbox" role="switch" /><span class="track"></span><span class="knob"></span></span>
+          </div>
+          <div>
+            <label for="xtoys-id" class="block text-xs text-muted mb-1">Private Webhook ID <span class="text-muted/70">(xtoys.app → profile → Private Webhook)</span></label>
+            <input id="xtoys-id" type="text" inputmode="latin" autocomplete="off" spellcheck="false" placeholder="paste your webhook ID"
+                   class="w-full font-mono text-sm px-3 py-2 rounded-lg ring-1 ring-line focus:ring-2 focus:ring-accent focus:outline-none placeholder:text-muted/50" />
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <div class="flex justify-between text-xs mb-1"><label for="xtoys-mult" class="text-muted">Intensity ×</label><span id="xtoys-mult-val" class="font-mono text-accent">1.00</span></div>
+              <input id="xtoys-mult" type="range" min="0" max="2" step="0.05" value="1" class="w-full" />
+            </div>
+            <div>
+              <label for="xtoys-mindur" class="block text-xs text-muted mb-1">Min duration (ms)</label>
+              <input id="xtoys-mindur" type="number" min="100" max="2000" step="50" value="300"
+                     class="w-full font-mono text-sm px-3 py-2 rounded-lg ring-1 ring-line focus:ring-2 focus:ring-accent focus:outline-none" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- GUI key -->
+      <div class="px-5 py-3 border-t border-line flex items-center gap-3 text-xs">
+        <label for="gui-key" class="text-muted">In-game panel toggle key</label>
+        <input id="gui-key" type="text" value="F7" spellcheck="false"
+               class="font-mono w-24 px-2.5 py-1.5 rounded-md ring-1 ring-line focus:ring-2 focus:ring-accent focus:outline-none" />
+        <span class="text-muted/70">e.g. F7, F1, KeypadEnter</span>
+      </div>
+    </section>
+
+    <!-- ── Toolbar ─────────────────────────────────────────────────── -->
+    <section class="rounded-xl bg-panel ring-1 ring-line p-4 flex flex-wrap items-center gap-3">
+      <div class="relative grow min-w-[200px]">
+        <svg class="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="search" type="text" placeholder="Filter events…" aria-label="Filter events"
+               class="w-full text-sm pl-9 pr-3 py-2 rounded-lg ring-1 ring-line focus:ring-2 focus:ring-accent focus:outline-none placeholder:text-muted/50" />
+      </div>
+      <div class="flex items-center gap-2 text-xs">
+        <button data-act="enable-all"  class="cursor-pointer px-3 py-2 rounded-lg bg-panel2 hover:bg-line ring-1 ring-line transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">Enable all</button>
+        <button data-act="disable-all" class="cursor-pointer px-3 py-2 rounded-lg bg-panel2 hover:bg-line ring-1 ring-line transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">Disable all</button>
+        <button data-act="reset"       class="cursor-pointer px-3 py-2 rounded-lg bg-panel2 hover:bg-line ring-1 ring-line transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">Reset defaults</button>
+      </div>
+      <div class="flex items-center gap-2 text-xs border-l border-line pl-3">
+        <span class="text-muted">Scale all intensity</span>
+        <input id="scale" type="range" min="0.25" max="1.5" step="0.05" value="1" class="w-28" aria-label="Global intensity scale" />
+        <span id="scale-val" class="font-mono text-accent w-9">×1.0</span>
+        <button id="scale-apply" class="cursor-pointer px-3 py-2 rounded-lg bg-panel2 hover:bg-line ring-1 ring-line transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">Apply</button>
+      </div>
+    </section>
+
+    <!-- ── Event categories render here ────────────────────────────── -->
+    <div id="categories" class="space-y-4"></div>
+    <p id="empty" class="hidden text-center text-muted text-sm py-12">No events match your filter.</p>
+  </main>
+
+  <footer class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-xs text-muted">
+    Drop the exported file at <code class="text-fg">…\7 Days To Die\BepInEx\config\com.rustyblu.7dtd_haptics.cfg</code> and relaunch. ·
+    <span class="text-muted/70">This editor runs entirely in your browser — nothing is uploaded.</span>
+  </footer>
+
+  <!-- ── Export modal ────────────────────────────────────────────── -->
+  <div id="modal" class="hidden fixed inset-0 z-50 grid place-items-center p-4 bg-ink/80 backdrop-blur-sm">
+    <div class="w-full max-w-2xl rounded-xl bg-panel ring-1 ring-line shadow-2xl overflow-hidden">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-line">
+        <h3 class="font-mono text-sm font-semibold">Generated config</h3>
+        <button id="modal-close" class="cursor-pointer text-muted hover:text-fg p-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent" aria-label="Close">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <textarea id="cfg-out" readonly spellcheck="false" class="w-full h-80 font-mono text-xs p-4 bg-ink/60 resize-none focus:outline-none leading-relaxed"></textarea>
+      <div class="flex items-center justify-end gap-2 px-5 py-4 border-t border-line">
+        <button id="btn-copy"     class="cursor-pointer inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg bg-panel2 hover:bg-line ring-1 ring-line transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">Copy</button>
+        <button id="btn-download" class="cursor-pointer inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg bg-accent text-ink hover:bg-emerald-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">Download .cfg</button>
+      </div>
+    </div>
+  </div>
+
+  <input id="file-input" type="file" accept=".cfg,.txt" class="hidden" />
+  <div id="toast" class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-lg bg-accent text-ink text-sm font-medium shadow-lg toast-in"></div>
+
+<script>
+/* ── Data model: faithful to HapticsConfig.cs ──────────────────────── */
+const PATTERNS  = ["Vibrate", "Pulse"];
+const ACTUATORS = ["All", "Vibrate", "Linear", "Rotate"];
+
+// [key, label, intensity, duration, pattern, enabled]
+const DEFAULTS = {
+  Combat: [
+    ["PlayerDamage","Player takes damage",0.8,400,"Vibrate",true],
+    ["PlayerBite","Zombie bite / infection",0.7,600,"Pulse",true],
+    ["PlayerGrabbed","Grabbed by zombie",0.4,1200,"Vibrate",true],
+    ["MeleeHit","Melee hit lands",0.5,150,"Vibrate",true],
+    ["GunShot","Gun fired",0.25,80,"Vibrate",true],
+    ["BowShot","Bow released",0.4,200,"Pulse",true],
+    ["BowDraw","Bow draw",0.3,250,"Vibrate",true],
+    ["ZombieKill","Zombie killed",0.6,200,"Vibrate",true],
+    ["Headshot","Headshot",0.9,120,"Vibrate",true],
+    ["CriticalHit","Critical hit",0.8,180,"Vibrate",true],
+    ["BlockBroken","Block broken",0.2,60,"Vibrate",true],
+  ],
+  Status: [
+    ["PlayerHeal","Healing",0.3,600,"Pulse",true],
+    ["PlayerEat","Eating",0.2,200,"Vibrate",true],
+    ["PlayerDrink","Drinking",0.2,200,"Vibrate",true],
+    ["PlayerBleeding","Bleeding",0.3,800,"Pulse",true],
+    ["PlayerBrokenBone","Broken bone",0.5,1000,"Pulse",true],
+    ["PlayerOnFire","On fire",0.9,500,"Vibrate",true],
+    ["PlayerInfected","Infected",0.3,800,"Pulse",true],
+    ["PlayerDrowning","Drowning",0.6,600,"Pulse",true],
+    ["PlayerWaterEnter","Enter water",0.5,400,"Pulse",true],
+    ["PlayerWaterExit","Exit water",0.3,250,"Pulse",true],
+    ["PlayerStarving","Starving",0.3,500,"Pulse",true],
+    ["PlayerOverheating","Overheating",0.5,600,"Vibrate",true],
+    ["PlayerFreezing","Freezing",0.4,800,"Pulse",true],
+    ["PlayerJump","Jump",0.15,80,"Vibrate",false],
+    ["PlayerFallLand","Fall landing",0.7,300,"Vibrate",true],
+    ["PlayerDeath","Death",1.0,1500,"Pulse",true],
+    ["PlayerRespawn","Respawn",0.3,500,"Pulse",true],
+  ],
+  World: [
+    ["Explosion","Explosion nearby",1.0,800,"Pulse",true],
+    ["Landmine","Landmine",1.0,600,"Vibrate",true],
+    ["ElectricTrap","Electric trap",0.7,400,"Vibrate",true],
+    ["BladeTrap","Blade trap",0.6,200,"Vibrate",true],
+    ["AirDrop","Air drop",0.5,600,"Pulse",true],
+    ["BloodMoonStart","Blood moon starts",1.0,3000,"Pulse",true],
+    ["BloodMoonEnd","Blood moon ends",0.5,2000,"Pulse",true],
+  ],
+  Activity: [
+    ["Mining","Mining",0.2,60,"Vibrate",true],
+    ["ChoppingTree","Chopping wood",0.25,80,"Vibrate",true],
+    ["CraftComplete","Craft complete",0.4,300,"Pulse",true],
+    ["LootOpened","Container opened",0.2,150,"Vibrate",true],
+    ["RareLoot","Rare loot",0.8,500,"Pulse",true],
+    ["LevelUp","Level up",0.9,800,"Pulse",true],
+    ["QuestComplete","Quest complete",0.7,600,"Pulse",true],
+  ],
+  Vehicle: [
+    ["VehicleCollision","Vehicle collision",0.8,400,"Vibrate",true],
+    ["VehicleDamage","Vehicle damaged",0.5,300,"Vibrate",true],
+    ["VehicleDestroyed","Vehicle destroyed",1.0,1000,"Pulse",true],
+    ["VehicleSpeed","High speed rumble",0.3,100,"Vibrate",false],
+  ],
+  Stealth: [
+    ["ZombieDetects","Zombie detects you",0.4,300,"Vibrate",true],
+    ["AlarmTriggered","Alarm triggered",0.7,500,"Vibrate",true],
+    ["ScreamerSpots","Screamer / horde call",0.9,800,"Pulse",true],
+  ],
+};
+
+const CAT_ICONS = {
+  Combat:   '<path d="M14.5 17.5 3 6V3h3l11.5 11.5"/><path d="m13 19 6-6"/><path d="m16 16 4 4"/><path d="m19 21 2-2"/>',
+  Status:   '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+  World:    '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+  Activity: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
+  Vehicle:  '<path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/><circle cx="6.5" cy="16.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/>',
+  Stealth:  '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
+};
+
+/* Working state — deep clone of defaults */
+let state = structuredClone(DEFAULTS);
+const ADV = {}; // key -> {deviceIndex, actuatorType, actuatorIndex}
+for (const list of Object.values(state)) for (const e of list) ADV[e[0]] = { di: -1, at: "All", ai: -1 };
+let xtoys = { enabled: false, id: "", mult: 1.0, mindur: 300 };
+let guiKey = "F7";
+
+/* ── Rendering ─────────────────────────────────────────────────────── */
+const $ = (s, r=document) => r.querySelector(s);
+const catWrap = $("#categories");
+
+function svg(paths, cls="w-4 h-4") {
+  return `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+}
+
+function eventCard(cat, e) {
+  const [key, label, intensity, duration, pattern, enabled] = e;
+  const a = ADV[key];
+  return `
+  <div class="event-card rounded-lg bg-panel2 ring-1 ring-line p-4 ${enabled ? '' : 'opacity-60'}" data-key="${key}" data-search="${(key+' '+label).toLowerCase()}">
+    <div class="flex items-start gap-3">
+      <label class="switch mt-0.5" title="Enable ${label}">
+        <input type="checkbox" role="switch" data-f="enabled" ${enabled ? 'checked' : ''} aria-label="Enable ${label}" />
+        <span class="track"></span><span class="knob"></span>
+      </label>
+      <div class="min-w-0 grow">
+        <div class="flex items-baseline justify-between gap-2">
+          <h4 class="text-sm font-medium truncate">${label}</h4>
+          <code class="text-[10px] text-muted/70 font-mono shrink-0">${key}</code>
+        </div>
+
+        <div class="mt-3 grid sm:grid-cols-2 gap-x-5 gap-y-3">
+          <!-- intensity -->
+          <div>
+            <div class="flex justify-between text-xs mb-1"><span class="text-muted">Intensity</span><span class="val-int font-mono text-accent">${intensity.toFixed(2)}</span></div>
+            <input type="range" data-f="intensity" min="0" max="1" step="0.05" value="${intensity}" class="w-full" aria-label="${label} intensity" />
+          </div>
+          <!-- duration -->
+          <div>
+            <div class="flex justify-between text-xs mb-1"><span class="text-muted">Duration</span><span class="val-dur font-mono text-fg">${duration} ms</span></div>
+            <input type="range" data-f="duration" min="50" max="5000" step="10" value="${duration}" class="w-full" aria-label="${label} duration" />
+          </div>
+        </div>
+
+        <div class="mt-3 flex items-center gap-3 flex-wrap">
+          <label class="text-xs text-muted">Pattern
+            <select data-f="pattern" class="ml-1 text-xs font-mono px-2 py-1 rounded ring-1 ring-line focus:ring-2 focus:ring-accent focus:outline-none">
+              ${PATTERNS.map(p => `<option ${p===pattern?'selected':''}>${p}</option>`).join('')}
+            </select>
+          </label>
+
+          <details class="ml-auto">
+            <summary class="inline-flex items-center gap-1 text-xs text-muted hover:text-fg transition-colors cursor-pointer select-none">
+              ${svg('<polyline points="9 18 15 12 9 6"/>','w-3.5 h-3.5 chev')} Advanced
+            </summary>
+            <div class="mt-3 grid grid-cols-3 gap-3 text-xs">
+              <label class="block">Device
+                <input type="number" data-f="di" min="-1" max="7" value="${a.di}" class="mt-1 w-full font-mono px-2 py-1 rounded ring-1 ring-line focus:ring-2 focus:ring-accent focus:outline-none" />
+              </label>
+              <label class="block">Actuator
+                <select data-f="at" class="mt-1 w-full font-mono px-2 py-1 rounded ring-1 ring-line focus:ring-2 focus:ring-accent focus:outline-none">
+                  ${ACTUATORS.map(x => `<option ${x===a.at?'selected':''}>${x}</option>`).join('')}
+                </select>
+              </label>
+              <label class="block">Act. idx
+                <input type="number" data-f="ai" min="-1" max="7" value="${a.ai}" class="mt-1 w-full font-mono px-2 py-1 rounded ring-1 ring-line focus:ring-2 focus:ring-accent focus:outline-none" />
+              </label>
+              <p class="col-span-3 text-muted/70 leading-snug">Device −1 = all connected. Act. idx −1 = all of that actuator class.</p>
+            </div>
+          </details>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function render() {
+  catWrap.innerHTML = Object.entries(state).map(([cat, list]) => `
+    <details open class="category rounded-xl bg-panel ring-1 ring-line overflow-hidden" data-cat="${cat}">
+      <summary class="flex items-center gap-3 px-5 py-3.5 hover:bg-panel2/50 transition-colors">
+        ${svg('<polyline points="9 18 15 12 9 6"/>','w-4 h-4 text-muted chev')}
+        <span class="text-accent">${svg(CAT_ICONS[cat],'w-4 h-4')}</span>
+        <h2 class="font-mono text-sm font-semibold">${cat}</h2>
+        <span class="cat-count text-xs font-mono text-muted ml-auto"></span>
+      </summary>
+      <div class="px-4 pb-4 grid lg:grid-cols-2 gap-3">
+        ${list.map(e => eventCard(cat, e)).join('')}
+      </div>
+    </details>`).join('');
+  updateMeta();
+}
+
+/* ── Live meta (counts, pills) ─────────────────────────────────────── */
+function updateMeta() {
+  let on = 0, total = 0;
+  for (const [cat, list] of Object.entries(state)) {
+    const c = list.filter(e => e[5]).length;
+    total += list.length; on += c;
+    const el = catWrap.querySelector(`[data-cat="${cat}"] .cat-count`);
+    if (el) el.textContent = `${c}/${list.length}`;
+  }
+  $("#pill-count").textContent = `${on}/${total} events on`;
+  const xp = $("#pill-xtoys");
+  xp.textContent = xtoys.enabled ? "XToys on" : "XToys off";
+  xp.classList.toggle("text-accent", xtoys.enabled);
+  xp.classList.toggle("ring-accent/40", xtoys.enabled);
+  xp.classList.toggle("text-muted", !xtoys.enabled);
+}
+
+/* ── Find event tuple by key ───────────────────────────────────────── */
+function findEvent(key) {
+  for (const list of Object.values(state)) {
+    const e = list.find(x => x[0] === key);
+    if (e) return e;
+  }
+  return null;
+}
+
+/* ── Event delegation ──────────────────────────────────────────────── */
+catWrap.addEventListener('input', ev => {
+  const card = ev.target.closest('.event-card'); if (!card) return;
+  const key = card.dataset.key, e = findEvent(key), a = ADV[key];
+  const f = ev.target.dataset.f;
+  switch (f) {
+    case 'enabled':   e[5] = ev.target.checked; card.classList.toggle('opacity-60', !e[5]); updateMeta(); break;
+    case 'intensity': e[2] = parseFloat(ev.target.value); card.querySelector('.val-int').textContent = e[2].toFixed(2); break;
+    case 'duration':  e[3] = parseInt(ev.target.value);   card.querySelector('.val-dur').textContent = e[3] + ' ms'; break;
+    case 'pattern':   e[4] = ev.target.value; break;
+    case 'di':        a.di = clampInt(ev.target.value, -1, 7); break;
+    case 'at':        a.at = ev.target.value; break;
+    case 'ai':        a.ai = clampInt(ev.target.value, -1, 7); break;
+  }
+});
+const clampInt = (v,min,max) => Math.max(min, Math.min(max, parseInt(v)||0));
+
+/* ── Toolbar actions ───────────────────────────────────────────────── */
+document.addEventListener('click', ev => {
+  const act = ev.target.closest('[data-act]')?.dataset.act;
+  if (!act) return;
+  if (act === 'enable-all' || act === 'disable-all') {
+    const on = act === 'enable-all';
+    for (const list of Object.values(state)) for (const e of list) e[5] = on;
+    render(); toast(on ? "All events enabled" : "All events disabled");
+  } else if (act === 'reset') {
+    state = structuredClone(DEFAULTS);
+    for (const list of Object.values(state)) for (const e of list) ADV[e[0]] = { di:-1, at:"All", ai:-1 };
+    render(); toast("Reset to defaults");
+  }
+});
+
+/* Scale all intensity */
+const scale = $("#scale"), scaleVal = $("#scale-val");
+scale.addEventListener('input', () => scaleVal.textContent = '×' + parseFloat(scale.value).toFixed(2).replace(/0$/,''));
+$("#scale-apply").addEventListener('click', () => {
+  const f = parseFloat(scale.value);
+  for (const list of Object.values(state)) for (const e of list) e[2] = Math.round(Math.max(0, Math.min(1, e[2]*f))*100)/100;
+  render(); toast(`Intensities scaled ×${f.toFixed(2)}`);
+});
+
+/* Search filter */
+$("#search").addEventListener('input', e => {
+  const q = e.target.value.trim().toLowerCase();
+  let anyVisible = false;
+  catWrap.querySelectorAll('.category').forEach(cat => {
+    let visibleInCat = 0;
+    cat.querySelectorAll('.event-card').forEach(card => {
+      const match = card.dataset.search.includes(q);
+      card.classList.toggle('hidden', !match);
+      if (match) { visibleInCat++; anyVisible = true; }
+    });
+    cat.classList.toggle('hidden', visibleInCat === 0);
+    if (q && visibleInCat) cat.open = true;
+  });
+  $("#empty").classList.toggle('hidden', anyVisible);
+});
+
+/* ── XToys + GUI inputs ────────────────────────────────────────────── */
+$("#xtoys-enabled").addEventListener('change', e => { xtoys.enabled = e.target.checked; updateMeta(); });
+$("#xtoys-id").addEventListener('input',  e => xtoys.id = e.target.value.trim());
+$("#xtoys-mult").addEventListener('input', e => { xtoys.mult = parseFloat(e.target.value); $("#xtoys-mult-val").textContent = xtoys.mult.toFixed(2); });
+$("#xtoys-mindur").addEventListener('input', e => xtoys.mindur = clampInt(e.target.value,100,2000));
+$("#gui-key").addEventListener('input', e => guiKey = e.target.value.trim() || "F7");
+
+/* ── .cfg generation (BepInEx format) ──────────────────────────────── */
+const fnum = n => Number.isInteger(n) ? String(n) : String(n);
+function generateCfg() {
+  let out = `[GUI]\n\n` +
+    `## Key to open/close the haptics settings panel.\n# Setting type: KeyboardShortcut\n# Default value: F7\nToggleKey = ${guiKey}\n\n`;
+
+  const def = {};
+  for (const [cat, list] of Object.entries(DEFAULTS)) for (const e of list) def[e[0]] = e;
+
+  for (const [cat, list] of Object.entries(state)) {
+    out += `[${cat}]\n\n`;
+    for (const e of list) {
+      const [key,label,intensity,duration,pattern,enabled] = e;
+      const a = ADV[key], d = def[key];
+      out += `## Enable ${key} haptic feedback.\n# Setting type: Boolean\n# Default value: ${d[5]}\n${key}.Enabled = ${enabled}\n\n`;
+      out += `## Intensity for ${key}.\n# Setting type: Single\n# Default value: ${fnum(d[2])}\n# Acceptable value range: From 0 to 1\n${key}.Intensity = ${fnum(intensity)}\n\n`;
+      out += `## Duration (ms) for ${key}.\n# Setting type: Int32\n# Default value: ${d[3]}\n# Acceptable value range: From 50 to 5000\n${key}.Duration = ${duration}\n\n`;
+      out += `## Vibrate = flat buzz. Pulse = ramp up/down.\n# Setting type: HapticPattern\n# Default value: ${d[4]}\n# Acceptable values: ${PATTERNS.join(', ')}\n${key}.Pattern = ${pattern}\n\n`;
+      out += `## Device slot for ${key}. -1 = all devices. 0 = first connected, 1 = second, etc.\n# Setting type: Int32\n# Default value: -1\n# Acceptable value range: From -1 to 7\n${key}.DeviceIndex = ${a.di}\n\n`;
+      out += `## Actuator class for ${key}. All = fire every actuator the device supports.\n# Setting type: HapticActuatorType\n# Default value: All\n# Acceptable values: ${ACTUATORS.join(', ')}\n${key}.ActuatorType = ${a.at}\n\n`;
+      out += `## Actuator index within the chosen type for ${key}. -1 = all of that type. 0 = first, 1 = second, etc.\n# Setting type: Int32\n# Default value: -1\n# Acceptable value range: From -1 to 7\n${key}.ActuatorIndex = ${a.ai}\n\n`;
+    }
+  }
+
+  out += `[XToys]\n\n`;
+  out += `## Enable XToys (xtoys.app) webhook output alongside Intiface/Buttplug.\n## Both outputs fire simultaneously for every event.\n# Setting type: Boolean\n# Default value: false\nEnabled = ${xtoys.enabled}\n\n`;
+  out += `## Your XToys Private Webhook ID.\n## Get it at: xtoys.app/me -> Private Webhook\n## You also need xtoys.app open in a browser tab with a script loaded and toy connected.\n# Setting type: String\n# Default value: \nWebhookId = ${xtoys.id}\n\n`;
+  out += `## Global intensity multiplier applied to all XToys output (0.0-2.0).\n## Use values above 1.0 to boost e-stim/Coyote devices that need stronger signals.\n# Setting type: Single\n# Default value: 1\n# Acceptable value range: From 0 to 2\nIntensityMultiplier = ${fnum(xtoys.mult)}\n\n`;
+  out += `## Minimum event duration sent to XToys (ms). Short events are padded to this length.\n## Prevents sub-200ms events (e.g. gun shots at 80ms) arriving too brief to feel\n## after ~100-500ms cloud round-trip latency. Default 300ms recommended.\n# Setting type: Int32\n# Default value: 300\n# Acceptable value range: From 100 to 2000\nMinDurationMs = ${xtoys.mindur}\n`;
+  return out;
+}
+
+/* ── .cfg import (parse key = value) ───────────────────────────────── */
+function importCfg(text) {
+  const lines = text.split(/\r?\n/);
+  let section = "";
+  const byKey = {};
+  for (const list of Object.values(state)) for (const e of list) byKey[e[0]] = e;
+  for (let raw of lines) {
+    const line = raw.trim();
+    if (!line || line.startsWith('#')) continue;
+    const sec = line.match(/^\[(.+)\]$/); if (sec) { section = sec[1]; continue; }
+    const m = line.match(/^([^=]+?)\s*=\s*(.*)$/); if (!m) continue;
+    const lhs = m[1].trim(), val = m[2].trim();
+    if (section === 'GUI' && lhs === 'ToggleKey') { guiKey = val; continue; }
+    if (section === 'XToys') {
+      if (lhs === 'Enabled') xtoys.enabled = val.toLowerCase() === 'true';
+      else if (lhs === 'WebhookId') xtoys.id = val;
+      else if (lhs === 'IntensityMultiplier') xtoys.mult = parseFloat(val)||1;
+      else if (lhs === 'MinDurationMs') xtoys.mindur = parseInt(val)||300;
+      continue;
+    }
+    const dot = lhs.lastIndexOf('.'); if (dot < 0) continue;
+    const key = lhs.slice(0,dot), field = lhs.slice(dot+1), e = byKey[key];
+    if (!e) continue;
+    const a = ADV[key];
+    if (field==='Enabled')        e[5] = val.toLowerCase()==='true';
+    else if (field==='Intensity') e[2] = Math.max(0,Math.min(1,parseFloat(val)||0));
+    else if (field==='Duration')  e[3] = parseInt(val)||e[3];
+    else if (field==='Pattern')   e[4] = PATTERNS.includes(val)?val:e[4];
+    else if (field==='DeviceIndex')   a.di = clampInt(val,-1,7);
+    else if (field==='ActuatorType')  a.at = ACTUATORS.includes(val)?val:a.at;
+    else if (field==='ActuatorIndex') a.ai = clampInt(val,-1,7);
+  }
+  // sync output panel inputs
+  $("#xtoys-enabled").checked = xtoys.enabled;
+  $("#xtoys-id").value = xtoys.id;
+  $("#xtoys-mult").value = xtoys.mult; $("#xtoys-mult-val").textContent = xtoys.mult.toFixed(2);
+  $("#xtoys-mindur").value = xtoys.mindur;
+  $("#gui-key").value = guiKey;
+  render(); toast("Config imported");
+}
+
+/* ── Export / import wiring ────────────────────────────────────────── */
+const modal = $("#modal");
+function openModal() { $("#cfg-out").value = generateCfg(); modal.classList.remove('hidden'); }
+function closeModal() { modal.classList.add('hidden'); }
+$("#btn-export").addEventListener('click', openModal);
+$("#modal-close").addEventListener('click', closeModal);
+modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+$("#btn-copy").addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText($("#cfg-out").value); toast("Copied to clipboard"); }
+  catch { $("#cfg-out").select(); document.execCommand('copy'); toast("Copied"); }
+});
+$("#btn-download").addEventListener('click', () => {
+  const blob = new Blob([generateCfg()], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'com.rustyblu.7dtd_haptics.cfg';
+  a.click(); URL.revokeObjectURL(a.href);
+  toast("Downloaded");
+});
+
+const fileInput = $("#file-input");
+$("#btn-import").addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => importCfg(r.result);
+  r.readAsText(f); fileInput.value = "";
+});
+
+/* ── Toast ─────────────────────────────────────────────────────────── */
+let toastT;
+function toast(msg) {
+  const t = $("#toast"); t.textContent = msg; t.classList.remove('hidden');
+  t.classList.remove('toast-in'); void t.offsetWidth; t.classList.add('toast-in');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.add('hidden'), 1800);
+}
+
+/* ── Boot ──────────────────────────────────────────────────────────── */
+render();
+</script>
+</body>
+</html>

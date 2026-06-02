@@ -1,0 +1,27 @@
+# ── Build output ──────────────────────────────────────────────
+bin/
+obj/
+*.user
+*.suo
+*.cache
+.vs/
+
+# ── NuGet ─────────────────────────────────────────────────────
+packages/
+*.nupkg
+
+# ── IDEs ──────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.csproj.user
+
+# ── OS cruft ──────────────────────────────────────────────────
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# ── Local-only / secrets ──────────────────────────────────────
+# Never commit a real XToys webhook ID or generated config.
+com.rustyblu.7dtd_haptics.cfg
+*.local.cfg
