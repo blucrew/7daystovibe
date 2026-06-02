@@ -40,8 +40,13 @@ BepInEx injects a proxy DLL, which EAC blocks (you'll get a `0xc000007b` crash).
 
 ## Install (players)
 
-1. Install **BepInEx 5 x64 (Mono)** into your 7DTD folder, then launch the game once and quit so it generates the `BepInEx/` folders.
-2. Download the latest release and copy **all** of its `.dll` files into:
+1. **Install BepInEx 5 (x64 / Mono):**
+   - Go to the [**BepInEx releases page**](https://github.com/BepInEx/BepInEx/releases) and download the latest **`BepInEx_win_x64_5.4.x.zip`**.
+     ⚠️ Get the **x64**, **5.4** build. *Not* the x86 build, and *not* BepInEx 6 / IL2CPP — 7 Days to Die is a 64-bit Unity **Mono** game and needs BepInEx 5 x64.
+   - Find your game folder: in Steam, right-click **7 Days to Die → Manage → Browse local files** (the folder containing `7DaysToDie.exe`, e.g. `…\steamapps\common\7 Days To Die\`).
+   - **Extract the zip's contents directly into that folder.** When done, `winhttp.dll`, `doorstop_config.ini`, and a `BepInEx\` folder should sit right next to `7DaysToDie.exe`.
+   - **Launch the game once (without EAC — see above) and quit to the desktop.** This first run generates `BepInEx\plugins`, `BepInEx\config`, etc. (If those folders don't appear, BepInEx didn't inject — double-check the files are next to the `.exe` and that you launched the non-EAC executable.)
+2. Download the latest [release](https://github.com/blucrew/7daystovibe/releases) and copy **all** of its `.dll` files into:
    ```
    <7 Days To Die>\BepInEx\plugins\
    ```
