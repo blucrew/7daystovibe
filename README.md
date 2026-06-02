@@ -30,7 +30,7 @@ Two output paths fire in parallel for every event:
 | **7 Days to Die** | Tested on **V 2.6 (b14)**. Must be launched **without EasyAntiCheat** (see below). |
 | **BepInEx** | **5.x — x64 (Mono)**. Not BepInEx 6 / IL2CPP. |
 | **Intiface Central** | For local devices. Run it and "Start Server" before launching the game. Optional if you only use XToys. |
-| **XToys account** | Optional, for cloud devices. See the in-game XToys tab for setup. |
+| **XToys account** | Optional, for cloud devices (e-stim, etc.). Free account at [xtoys.app](https://xtoys.app). See [XToys setup](#xtoys-setup-optional-cloud-devices) below. |
 
 ### EasyAntiCheat must be OFF
 
@@ -50,6 +50,26 @@ BepInEx injects a proxy DLL, which EAC blocks (you'll get a `0xc000007b` crash).
 4. Launch the game **without EAC**, load a save, and press **`Insert`** to open the panel.
 
 Settings live in `BepInEx/config/com.7daystovibe.haptics.cfg` and also in the in-game panel (changes save automatically).
+
+---
+
+## XToys setup (optional — cloud devices)
+
+Intiface covers local USB/Bluetooth toys. **XToys** adds cloud-connected toys (DG-LAB Coyote e-stim, etc.) and fires in parallel. One-time setup:
+
+1. Sign in (free) at **[xtoys.app](https://xtoys.app)**.
+2. Load the **"7 Days to Vibe"** script from the script library (Add a Block → Scripts → search "7 Days to Vibe"), or build your own: a script with a **Private Webhook** block and a **Generic Output** block, plus a Global Trigger `action: setIntensity` → `setVolume` on the output with `{trigger-intensity}`.
+3. **Connect your toy** under the script's **Generic Output**, then press **▶** to run the script. Keep the browser tab open while you play.
+4. Get your **Private Webhook ID**: xtoys.app → menu → your profile, or the script's Settings → "Webhook ID".
+5. In `BepInEx/config/com.7daystovibe.haptics.cfg` (or the in-game **Insert → XToys** tab), set:
+   ```
+   [XToys]
+   Enabled = true
+   WebhookId = <your-webhook-id>
+   ```
+6. Launch the game. Haptic events now fire to **both** Intiface and XToys.
+
+The plugin sends `POST https://webhook.xtoys.app/<id>` with `{"action":"setIntensity","intensity":0-100}`. Expect ~100–500 ms cloud latency (vs Intiface's local <5 ms); short events are auto-padded via `XToys.MinDurationMs`. **Your Webhook ID is a credential — don't share it.**
 
 ---
 

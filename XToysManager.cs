@@ -9,10 +9,13 @@ namespace HapticsPlugin
     /// Manages XToys (xtoys.app) webhook integration as a second haptic output,
     /// firing in parallel alongside Intiface/Buttplug for every game event.
     ///
-    /// Protocol (confirmed from VSE implementation):
-    ///   GET https://xtoys.app/webhook?id=&lt;webhookId&gt;&amp;action=set-intensity&amp;intensity=&lt;0-100&gt;
-    ///   No request body. No auth headers. The webhook ID is the only credential.
+    /// Protocol (XToys Private Webhook, verified against live endpoint June 2026):
+    ///   POST https://webhook.xtoys.app/&lt;webhookId&gt;
+    ///   Body (JSON): {"action":"setIntensity","intensity":&lt;0-100&gt;}
+    ///   (action keyword is camelCase "setIntensity" — matches XToys' webhook scripts.)
+    ///   No auth headers for a private webhook. The webhook ID is the only credential.
     ///   HTTP 200 = received. Does NOT confirm the toy actually felt it.
+    ///   (The legacy GET xtoys.app/webhook?id=... endpoint now 301-redirects here.)
     ///
     /// Key design decisions (from VSE reference):
     ///   - Single static HttpClient (never new per call — port exhaustion)
@@ -31,7 +34,7 @@ namespace HapticsPlugin
     {
         // Single HttpClient for the plugin lifetime — DO NOT new one per request.
         private static readonly HttpClient _http;
-        private const string BaseUrl = "https://xtoys.app/webhook";
+        private const string BaseUrl = "https://webhook.xtoys.app";
 
         private static string _webhookId         = "";
         private static int    _lastSentIntensity  = -1;   // -1 = nothing sent yet this session
@@ -128,12 +131,14 @@ namespace HapticsPlugin
             // Deduplicate — skip if the device is already at this intensity.
             if (intensity == _lastSentIntensity) return;
 
-            // Escape the webhook ID in case it contains special characters.
-            string url = $"{BaseUrl}?id={Uri.EscapeDataString(_webhookId)}" +
-                         $"&action=set-intensity&intensity={intensity}";
+            // POST the command as JSON to the private-webhook endpoint.
+            // Escape the webhook ID in case it contains URL-special characters.
+            string url  = $"{BaseUrl}/{Uri.EscapeDataString(_webhookId)}";
+            string json = $"{{\"action\":\"setIntensity\",\"intensity\":{intensity}}}";
             try
             {
-                using var resp = await _http.GetAsync(url).ConfigureAwait(false);
+                using var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+                using var resp = await _http.PostAsync(url, content).ConfigureAwait(false);
                 _lastSentIntensity = intensity;
                 HapticsLogger.Verbose(LogCat.XToys, $"→ {intensity}%  HTTP {(int)resp.StatusCode}");
             }
