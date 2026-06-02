@@ -9,6 +9,8 @@ Two output paths fire in parallel for every event:
 
 > ⚠️ **Adult content.** This mod integrates with adult haptic hardware. 18+.
 
+![The in-game config panel](docs/panel.png)
+
 ---
 
 ## Features

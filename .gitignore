@@ -21,6 +21,9 @@ ehthumbs.db
 Desktop.ini
 .DS_Store
 
+# ── Release artifacts ─────────────────────────────────────────
+dist/
+
 # ── Local-only / secrets ──────────────────────────────────────
 # Never commit a real XToys webhook ID or generated config.
 com.rustyblu.7dtd_haptics.cfg
