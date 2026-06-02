@@ -58,7 +58,7 @@ Settings live in `BepInEx/config/com.7daystovibe.haptics.cfg` and also in the in
 Intiface covers local USB/Bluetooth toys. **XToys** adds cloud-connected toys (DG-LAB Coyote e-stim, etc.) and fires in parallel. One-time setup:
 
 1. Sign in (free) at **[xtoys.app](https://xtoys.app)**.
-2. Load the **"7 Days to Vibe"** script from the script library (Add a Block → Scripts → search "7 Days to Vibe"), or build your own: a script with a **Private Webhook** block and a **Generic Output** block, plus a Global Trigger `action: setIntensity` → `setVolume` on the output with `{trigger-intensity}`.
+2. Load the **"7 Days to Vibe"** script — open **[xtoys.app/scripts/7dtvibe](https://xtoys.app/scripts/7dtvibe)** (or in-app: Add a Block → Scripts → search "7 Days to Vibe"). *(Build-your-own alternative: a script with a **Private Webhook** block + a **Generic Output** block, plus a Global Trigger `action: setIntensity` → `setVolume` on the output with `{trigger-intensity}`.)*
 3. **Connect your toy** under the script's **Generic Output**, then press **▶** to run the script. Keep the browser tab open while you play.
 4. Get your **Private Webhook ID**: xtoys.app → menu → your profile, or the script's Settings → "Webhook ID".
 5. In `BepInEx/config/com.7daystovibe.haptics.cfg` (or the in-game **Insert → XToys** tab), set:
