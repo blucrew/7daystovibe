@@ -79,7 +79,7 @@ namespace HapticsPlugin
 
     internal static class PluginInfo
     {
-        public const string PLUGIN_GUID    = "com.rustyblu.7dtd_haptics";
+        public const string PLUGIN_GUID    = "com.7daystovibe.haptics";
         public const string PLUGIN_NAME    = "7DTD Haptics";
         public const string PLUGIN_VERSION = "0.1.0";
     }

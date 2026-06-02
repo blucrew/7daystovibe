@@ -49,7 +49,7 @@ BepInEx injects a proxy DLL, which EAC blocks (you'll get a `0xc000007b` crash).
 3. Start **Intiface Central** and connect your device(s).
 4. Launch the game **without EAC**, load a save, and press **`Insert`** to open the panel.
 
-Settings live in `BepInEx/config/com.rustyblu.7dtd_haptics.cfg` and also in the in-game panel (changes save automatically).
+Settings live in `BepInEx/config/com.7daystovibe.haptics.cfg` and also in the in-game panel (changes save automatically).
 
 ---
 
@@ -88,7 +88,7 @@ On a successful build, the plugin **and all its dependencies** are copied straig
 
 ## Credits
 
-Built by **RustyBlu**. Haptics via [Buttplug / Intiface](https://buttplug.io) and [XToys](https://xtoys.app).
+Built by **blucrew**. Haptics via [Buttplug / Intiface](https://buttplug.io) and [XToys](https://xtoys.app).
 
 ## License
 

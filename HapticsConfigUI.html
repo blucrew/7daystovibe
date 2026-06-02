@@ -76,7 +76,7 @@
         </span>
         <div class="leading-tight">
           <h1 class="font-mono font-semibold text-sm sm:text-base tracking-tight">7DTD&nbsp;Haptics <span class="text-muted font-normal">/ Config Editor</span></h1>
-          <p class="text-[11px] text-muted">Generates <code class="text-accent">com.rustyblu.7dtd_haptics.cfg</code></p>
+          <p class="text-[11px] text-muted">Generates <code class="text-accent">com.7daystovibe.haptics.cfg</code></p>
         </div>
       </div>
 
@@ -174,7 +174,7 @@
   </main>
 
   <footer class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-xs text-muted">
-    Drop the exported file at <code class="text-fg">…\7 Days To Die\BepInEx\config\com.rustyblu.7dtd_haptics.cfg</code> and relaunch. ·
+    Drop the exported file at <code class="text-fg">…\7 Days To Die\BepInEx\config\com.7daystovibe.haptics.cfg</code> and relaunch. ·
     <span class="text-muted/70">This editor runs entirely in your browser — nothing is uploaded.</span>
   </footer>
 
@@ -550,7 +550,7 @@ $("#btn-download").addEventListener('click', () => {
   const blob = new Blob([generateCfg()], { type: 'text/plain' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'com.rustyblu.7dtd_haptics.cfg';
+  a.download = 'com.7daystovibe.haptics.cfg';
   a.click(); URL.revokeObjectURL(a.href);
   toast("Downloaded");
 });

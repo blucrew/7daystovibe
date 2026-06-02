@@ -5,7 +5,7 @@ namespace HapticsPlugin
 {
     /// <summary>
     /// Central config store. Every event has Enabled, Intensity, Duration, and Pattern.
-    /// BepInEx auto-saves these to BepInEx/config/com.rustyblu.7dtd_haptics.cfg
+    /// BepInEx auto-saves these to BepInEx/config/com.7daystovibe.haptics.cfg
     /// and they also show up in the BepInEx ConfigurationManager overlay (F1) if installed.
     /// </summary>
     public static class HapticsConfig
